@@ -28,6 +28,26 @@ jobs:
         paths:
         - ~/.m2
 
+  # Run integration tests
+  e2e-tests:
+    working_directory: ~/fabric8io/docker-maven-plugin
+    machine: true
+    steps:
+    - checkout
+    - restore_cache:
+        key: dmp-{{ checksum "pom.xml" }}
+    - run:
+        command: |
+          mvn clean install -DskipTests
+          PROJECT_VERSION=$(mvn -q -Dexec.executable=echo -Dexec.args='${project.version}' --non-recursive exec:exec)
+          cd it/
+          find . -type f -exec sed -i 's/0.29-SNAPSHOT/'"$PROJECT_VERSION"'/g' {} +
+          mvn clean install
+    - save_cache:
+        key: dmp-{{ checksum "pom.xml" }}
+        paths:
+        - ~/.m2
+
   sonar-pr:
     working_directory: ~/fabric8io/dmp-sonar-pr
     docker:
@@ -38,9 +58,12 @@ jobs:
         key: dmp-sonar-pr-{{ checksum "pom.xml" }}
     - run: |
         if [ -n "${CIRCLE_PR_NUMBER}" ]; then
-          mvn clean org.jacoco:jacoco-maven-plugin:prepare-agent package sonar:sonar \
-             -Dsonar.github.pullRequest=${CIRCLE_PR_NUMBER} \
-             -Dsonar.github.repository=fabric8io/docker-maven-plugin \
+          mvn clean -Pjacoco org.jacoco:jacoco-maven-plugin:prepare-agent package sonar:sonar \
+             -Dsonar.pullrequest.base=master \
+             -Dsonar.pullrequest.branch=${CIRCLE_BRANCH} \
+             -Dsonar.pullrequest.key=${CIRCLE_PR_NUMBER} \
+             -Dsonar.pullrequest.provider=GitHub \
+             -Dsonar.pullrequest.github.repository=fabric8io/docker-maven-plugin \
              -Dsonar.github.oauth=${GITHUB_COMMENT_TOKEN} \
              -Dsonar.host.url=https://sonarcloud.io \
              -Dsonar.login=${SONARQUBE_TOKEN}
@@ -62,7 +85,7 @@ jobs:
     - restore_cache:
         key: dmp-sonar-{{ checksum "pom.xml" }}
     - run: |
-        mvn clean org.jacoco:jacoco-maven-plugin:prepare-agent package sonar:sonar \
+        mvn clean -Pjacoco org.jacoco:jacoco-maven-plugin:prepare-agent package sonar:sonar \
         -Dsonar.host.url=https://sonarcloud.io \
         -Dsonar.login=${SONARQUBE_TOKEN}
     - save_cache:
@@ -79,6 +102,7 @@ workflows:
           branches:
             only: dmp.fabric8.io
     - build
+    - e2e-tests
     - sonar-pr
     - sonar:
         filters:

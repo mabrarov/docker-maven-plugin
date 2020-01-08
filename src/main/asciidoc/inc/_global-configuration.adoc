@@ -45,6 +45,14 @@ The following values are supported:
 
 | `docker.autoPull`
 
+| *buildArchiveOnly*
+a| Skip the actual Docker image build and only create the archive holding the Dockerfile and build context. The following values are supported:
+
+* `/path/to/archive` : Create the build tar archive as file with name `/path/to/archive` and then stop without doing the actual image build
+* `true` (or an empty value) : Skip building the image, but don't copy the generated build archive.
+* `false` : Build the image. This is the default behaviour.
+| `docker.buildArchiveOnly`
+
 | *certPath*
 | Path to SSL certificate when SSL is used for communicating with the Docker daemon. These certificates are normally stored in `~/.docker/`. With this configuration the path can be set explicitly. If not set, the fallback is first taken from the environment variable `DOCKER_CERT_PATH` and then as last resort `~/.docker/`. The keys in this are expected with it standard names `ca.pem`, `cert.pem` and `key.pem`. Please refer to the https://docs.docker.com/articles/https[Docker documentation] for more information about SSL security with Docker.
 | `docker.certPath`
@@ -144,7 +152,7 @@ If set to `true` this plugin won't remove any tags with `{plugin}:remove`. +
 | `docker.useColor`
 
 | *verbose*
-a| String attribute for switching on verbose output on standard output (stdout). It takes a comma separated list of string values to switch on various verbosity groups.
+| String attribute for switching on verbose output on standard output (stdout). It takes a comma separated list of string values to switch on various verbosity groups.
 
 The currently known groups are:
 

@@ -1,5 +1,27 @@
 # ChangeLog
 
+* **0.32.0** (2020-01-08)
+  - Support building dockerFile without pushing it to docker server ([#1197](https://github.com/fabric8io/docker-maven-plugin/issues/1197))
+  - Update to jnr-unixsocket 0.23
+  - Add null check for null instance in config.json for email ([#1262](https://github.com/fabric8io/docker-maven-plugin/issues/1262))
+  - Allow merging of image configurations using <imagesMap> ([#360](https://github.com/fabric8io/docker-maven-plugin/issues/360))
+  - Update to joda-time 2.10.4 ([#706](https://github.com/fabric8io/docker-maven-plugin/issues/706))
+  - Add docker:build support for 'network' option ([#1030](https://github.com/fabric8io/docker-maven-plugin/issues/1030))
+  - Avoiding chown to reduce the image size ([#544](https://github.com/fabric8io/docker-maven-plugin/issues/544))
+    (_Note: Assembly user format `user:user:user` with the third user option has been marked deprecated
+    and will not be available in future versions of plugin_)
+  - Failure referencing a previous staged image in FROM clause ([#1264](https://github.com/fabric8io/docker-maven-plugin/issues/1264))
+  - Treat bridged and default network mode the same ([#1234](https://github.com/fabric8io/docker-maven-plugin/issues/1234))
+  - Fix NPE when cacheFrom is missing from config ([#1274](https://github.com/fabric8io/docker-maven-plugin/issues/1274))
+  - Fix healthy option regression introduced in 0.25.0 ([#1279](https://github.com/fabric8io/docker-maven-plugin/issues/1279))
+  - Allow killing and removing all spawned containers ([#1182](https://github.com/fabric8io/docker-maven-plugin/issues/1182))
+  - Deprecated "authToken" for ECR authentication in favor of "auth" ([#1286](https://github.com/fabric8io/docker-maven-plugin/issues/1286))
+  - Allow overriding of existing image in creation of temporary one with same tag before push ([#838](https://github.com/fabric8io/docker-maven-plugin/issues/838))
+  - Pick up AWS credentials from ENV variables ([#1310](https://github.com/fabric8io/docker-maven-plugin/issues/1310))
+  - Fix accidentally disabled logging under certain conditions ([#1291](https://github.com/fabric8io/docker-maven-plugin/issues/1291))
+  - When stopping containers, try harder to remove containers, even if one fails ([#1251](https://github.com/fabric8io/docker-maven-plugin/issues/1251))
+  - Added integration tests ([#1209](https://github.com/fabric8io/docker-maven-plugin/issues/1209))
+
 * **0.31.0** (2019-08-10)
   - Fix test cases on Windows ([#1220](https://github.com/fabric8io/docker-maven-plugin/issues/1220))
   - ECR credentials from IAM Task role for ECS Fargate deployment ([#1233](https://github.com/fabric8io/docker-maven-plugin/issues/1233))
@@ -10,7 +32,6 @@
   - Support for pattern matching in `docker:stop` and `docker:remove` ([#1215](https://github.com/fabric8io/docker-maven-plugin/issues/1215))
   - Increase interoperability with docker-java by accepting `registry.username` and `registry.password`, too ([#1245](https://github.com/fabric8io/docker-maven-plugin/issues/1245))
 
->>>>>>> preps for 0.31.0
 * **0.30.0** (2019-04-21)
   - Restore ANSI color to Maven logging if disabled during plugin execution and enable color for Windows with Maven 3.5.0 or later. Color logging is enabled by default, but disabled if the Maven CLI disables color (e.g. in batch mode) ([#1108](https://github.com/fabric8io/docker-maven-plugin/issues/1108))
   - Fix NPE if docker:save is called with -Dfile=file-name-only.tar ([#1203](https://github.com/fabric8io/docker-maven-plugin/issues/1203))
@@ -173,7 +194,7 @@ Please note that now filtering in an external Dockerfiles is switched on by defa
   - Allow multi line matches in log output ([#628](https://github.com/fabric8io/docker-maven-plugin/issues/628))
   - Add a wait condition on a healthcheck when starting up containers ([#719](https://github.com/fabric8io/docker-maven-plugin/issues/719))
   - Don't use authentication from config when no "auth" is set ([#731](https://github.com/fabric8io/docker-maven-plugin/issues/731))
-
+  
 * **0.20.0** (2017-02-17)
   - Removed `build-nofork` and `source-nofork` in favor for a more direct solution which prevents forking of the lifecycle. Please refer the documentation, chapter "Assembly" for more information about this.
 
