@@ -1,10 +1,15 @@
 # ChangeLog
 
+* **0.33.0** (2020-01-21)
+  - Update to jnr-unixsocket 0.25 to solve concurrency issues ([#552](https://github.com/fabric8io/docker-maven-plugin/issues/552))
+  - Udate ECR AuthorizationToken URL to new endpoint ([#1317](https://github.com/fabric8io/docker-maven-plugin/issues/1317))
+  - Allow including `com.amazonaws:aws-java-sdk-core` as plugin dependency to pick up various forms of AWS credentials with which to authenticate at AWS ECR ([#1311](https://github.com/fabric8io/docker-maven-plugin/issues/1311))
+
 * **0.32.0** (2020-01-08)
   - Support building dockerFile without pushing it to docker server ([#1197](https://github.com/fabric8io/docker-maven-plugin/issues/1197))
   - Update to jnr-unixsocket 0.23
   - Add null check for null instance in config.json for email ([#1262](https://github.com/fabric8io/docker-maven-plugin/issues/1262))
-  - Allow merging of image configurations using <imagesMap> ([#360](https://github.com/fabric8io/docker-maven-plugin/issues/360))
+  - Allow merging of image configurations using `<imagesMap>` ([#1259](https://github.com/fabric8io/docker-maven-plugin/issues/1259))
   - Update to joda-time 2.10.4 ([#706](https://github.com/fabric8io/docker-maven-plugin/issues/706))
   - Add docker:build support for 'network' option ([#1030](https://github.com/fabric8io/docker-maven-plugin/issues/1030))
   - Avoiding chown to reduce the image size ([#544](https://github.com/fabric8io/docker-maven-plugin/issues/544))
