@@ -45,6 +45,11 @@ public class RegistryService {
                            int retries, RegistryConfig registryConfig, boolean skipTag) throws DockerAccessException, MojoExecutionException {
         for (ImageConfiguration imageConfig : imageConfigs) {
             BuildImageConfiguration buildConfig = imageConfig.getBuildConfiguration();
+            if (buildConfig.skipPush()) {
+                log.info("%s : Skipped pushing", imageConfig.getDescription());
+                continue;
+            }
+
             String name = imageConfig.getName();
             if (buildConfig != null) {
                 String configuredRegistry = EnvUtil.firstRegistryOf(
@@ -98,7 +103,7 @@ public class RegistryService {
             imageName.getRegistry(),
             registryConfig.getRegistry());
         docker.pullImage(imageName.getFullName(),
-                         createAuthConfig(false, null, actualRegistry, registryConfig), actualRegistry);
+                         createAuthConfig(false, imageName.getUser(), actualRegistry, registryConfig), actualRegistry);
         log.info("Pulled %s in %s", imageName.getFullName(), EnvUtil.formatDurationTill(time));
         pullManager.pulled(image);
 

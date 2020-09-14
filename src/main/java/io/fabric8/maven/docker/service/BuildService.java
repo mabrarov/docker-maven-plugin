@@ -68,7 +68,7 @@ public class BuildService {
             autoPullBaseImage(imageConfig, imagePullManager, buildContext);
         }
 
-        buildImage(imageConfig, buildContext.getMojoParameters(), checkForNocache(imageConfig), addBuildArgs(buildContext), buildArchiveFile);
+        buildImage(imageConfig, buildContext.getMojoParameters(), checkForNocache(imageConfig), checkForSquash(imageConfig), addBuildArgs(buildContext), buildArchiveFile);
     }
 
     /**
@@ -113,19 +113,16 @@ public class BuildService {
         }
     }
 
-    public void tagImage(String imageName, ImageConfiguration imageConfig) throws DockerAccessException {
+    public void tagImage(ImageConfiguration imageConfig) throws DockerAccessException {
 
         List<String> tags = imageConfig.getBuildConfiguration().getTags();
-        if (tags.size() > 0) {
+        if (!tags.isEmpty()) {
+            String imageName = imageConfig.getName();
             log.info("%s: Tag with %s", imageConfig.getDescription(), EnvUtil.stringJoin(tags, ","));
 
             for (String tag : tags) {
-                if (tag != null) {
-                    docker.tag(imageName, new ImageName(imageName, tag).getFullName(), true);
-                }
+                tagImage(imageName, tag, null);
             }
-
-            log.debug("Tagging image successful!");
         }
     }
 
@@ -139,7 +136,7 @@ public class BuildService {
      * @throws DockerAccessException
      * @throws MojoExecutionException
      */
-    protected void buildImage(ImageConfiguration imageConfig, MojoParameters params, boolean noCache, Map<String, String> buildArgs, File dockerArchive)
+    protected void buildImage(ImageConfiguration imageConfig, MojoParameters params, boolean noCache, boolean squash, Map<String, String> buildArgs, File dockerArchive)
             throws DockerAccessException, MojoExecutionException {
 
         String imageName = imageConfig.getName();
@@ -178,6 +175,7 @@ public class BuildService {
                         .dockerfile(getDockerfileName(buildConfig))
                         .forceRemove(cleanupMode.isRemove())
                         .noCache(noCache)
+                        .squash(squash)
                         .cacheFrom(buildConfig.getCacheFrom())
                         .network(buildConfig.getNetwork())
                         .buildArgs(mergedBuildMap);
@@ -196,6 +194,14 @@ public class BuildService {
                     throw exp;
                 }
             }
+        }
+    }
+
+    public void tagImage(String imageName, String tag, String repo) throws DockerAccessException {
+        if (tag != null) {
+            String fullImageName = new ImageName(imageName, tag).getNameWithOptionalRepository(repo);
+            docker.tag(imageName, fullImageName, true);
+            log.info("Tagging image %s successful!", fullImageName);
         }
     }
 
@@ -419,6 +425,16 @@ public class BuildService {
         } else {
             BuildImageConfiguration buildConfig = imageConfig.getBuildConfiguration();
             return buildConfig.noCache();
+        }
+    }
+
+    private boolean checkForSquash(ImageConfiguration imageConfig) {
+        String squash = System.getProperty("docker.squash");
+        if (squash != null) {
+            return squash.length() == 0 || Boolean.valueOf(squash);
+        } else {
+            BuildImageConfiguration buildConfig = imageConfig.getBuildConfiguration();
+            return buildConfig.squash();
         }
     }
 

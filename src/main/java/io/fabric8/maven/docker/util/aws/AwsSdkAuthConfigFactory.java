@@ -3,6 +3,11 @@ package io.fabric8.maven.docker.util.aws;
 import io.fabric8.maven.docker.access.AuthConfig;
 import io.fabric8.maven.docker.util.Logger;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 public class AwsSdkAuthConfigFactory {
 
     private final Logger log;
@@ -32,7 +37,18 @@ public class AwsSdkAuthConfigFactory {
                     sessionToken
             );
         } catch (Throwable t) {
-            log.warn("AWS SDK detected, but failed to fetch AWS credentials: %s", t);
+            String issueTitle = null;
+            try {
+                issueTitle = URLEncoder.encode("Failed calling AWS SDK: " + t.getMessage(), UTF_8.name());
+            } catch (UnsupportedEncodingException ignore) {
+            }
+            log.warn("Failed to fetch AWS credentials: %s", t.getMessage());
+            if (t.getCause() != null) {
+                log.warn("Caused by: %s", t.getCause().getMessage());
+            }
+            log.warn("Please report a bug at https://github.com/fabric8io/docker-maven-plugin/issues/new?%s",
+                    issueTitle == null ? "" : "title=?" + issueTitle);
+            log.warn("%s", t);
             return null;
         }
     }

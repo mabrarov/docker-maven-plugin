@@ -1,5 +1,16 @@
 # ChangeLog
 
+* **0.34.0** (2020-09-13)
+  - Support `ARG` in `FROM` ([#859](https://github.com/fabric8io/docker-maven-plugin/issues/859))
+  - Handle authentication tokens returned from credential helpers ([#1348](https://github.com/fabric8io/docker-maven-plugin/issues/1348))
+  - Migrate from joda-time to java.time ([#1025](https://github.com/fabric8io/docker-maven-plugin/issues/1025))
+    The handling of Y changes when the week straddle the New year ([Stack Overflow](https://stackoverflow.com/questions/26431882/difference-between-year-of-era-and-week-based-year))
+  - Fix JSON error when parsin tafs ([#1354](https://github.com/fabric8io/docker-maven-plugin/issues/1354))
+  - Add `skipPush` option to build image configuration ([#1243](https://github.com/fabric8io/docker-maven-plugin/issues/1243))
+  - docker.container.<alias>.ip property is no longer set ([#1242](https://github.com/fabric8io/docker-maven-plugin/issues/1242))
+  - Support `squash` in build options to squash newly built layers into a single layer ([#785](https://github.com/fabric8io/docker-maven-plugin/issues/785)) 
+  - Support for JIB mode([#1277](https://github.com/fabric8io/docker-maven-plugin/pull/1277))
+
 * **0.33.0** (2020-01-21)
   - Update to jnr-unixsocket 0.25 to solve concurrency issues ([#552](https://github.com/fabric8io/docker-maven-plugin/issues/552))
   - Udate ECR AuthorizationToken URL to new endpoint ([#1317](https://github.com/fabric8io/docker-maven-plugin/issues/1317))
