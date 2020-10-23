@@ -6,6 +6,7 @@ import com.google.cloud.tools.jib.api.buildplan.FileEntriesLayer;
 import com.google.cloud.tools.jib.api.buildplan.ImageFormat;
 import com.google.cloud.tools.jib.api.buildplan.Port;
 
+import io.fabric8.maven.docker.UnixOnlyTests;
 import io.fabric8.maven.docker.config.Arguments;
 import io.fabric8.maven.docker.config.AssemblyConfiguration;
 import io.fabric8.maven.docker.config.BuildImageConfiguration;
@@ -15,6 +16,7 @@ import mockit.Verifications;
 import org.apache.maven.plugins.assembly.model.Assembly;
 import org.apache.maven.plugins.assembly.model.FileItem;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import java.io.File;
 import java.io.IOException;
@@ -27,7 +29,6 @@ import java.util.Set;
 
 import static io.fabric8.maven.docker.util.JibServiceUtil.BUSYBOX;
 import static io.fabric8.maven.docker.util.JibServiceUtil.containerFromImageConfiguration;
-import static io.fabric8.maven.docker.util.JibServiceUtil.getImageFormat;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -76,6 +77,7 @@ public class JibServiceUtilTest {
     }
 
     @Test
+    @Category(UnixOnlyTests.class)
     public void testCopyToContainer(@Mocked JibContainerBuilder containerBuilder) throws IOException {
         // Given
         File temporaryDirectory = Files.createTempDirectory("jib-test").toFile();
