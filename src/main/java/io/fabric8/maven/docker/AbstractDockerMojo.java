@@ -501,5 +501,9 @@ public abstract class AbstractDockerMojo extends AbstractMojo implements Context
         return new ImageConfiguration.Builder(image).buildConfig(buildConfig).build();
     }
 
+    protected boolean invokedTogetherWithDockerStart() {
+        Boolean startCalled = (Boolean) getPluginContext().get(CONTEXT_KEY_START_CALLED);
+        return startCalled != null && startCalled;
+    }
 
 }

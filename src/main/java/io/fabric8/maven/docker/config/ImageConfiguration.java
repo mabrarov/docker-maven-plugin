@@ -40,6 +40,9 @@ public class ImageConfiguration implements StartOrderResolver.Resolvable, Serial
     private WatchImageConfiguration watch;
 
     @Parameter
+    private CopyConfiguration copy;
+
+    @Parameter
     private Map<String,String> external;
 
     @Parameter
@@ -107,6 +110,10 @@ public class ImageConfiguration implements StartOrderResolver.Resolvable, Serial
 
     public WatchImageConfiguration getWatchConfiguration() {
         return watch;
+    }
+
+    public CopyConfiguration getCopyConfiguration() {
+        return copy;
     }
 
     public Map<String, String> getExternalConfig() {
@@ -257,6 +264,11 @@ public class ImageConfiguration implements StartOrderResolver.Resolvable, Serial
 
         public Builder watchConfig(WatchImageConfiguration watchConfig) {
             config.watch = watchConfig;
+            return this;
+        }
+
+        public Builder copyConfig(CopyConfiguration copyConfig) {
+            config.copy = copyConfig;
             return this;
         }
     }

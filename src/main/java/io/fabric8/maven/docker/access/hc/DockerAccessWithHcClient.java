@@ -93,7 +93,7 @@ public class DockerAccessWithHcClient implements DockerAccess {
     // Minimal API version, independent of any feature used
     public static final String API_VERSION = "1.18";
 
-    // Copy buffer size when saving images
+    // Copy buffer size when saving images or copying files from containers
     private static final int COPY_BUFFER_SIZE = 65536;
 
     // Logging
@@ -285,7 +285,7 @@ public class DockerAccessWithHcClient implements DockerAccess {
     }
 
     @Override
-    public void copyArchive(String containerId, File archive, String targetPath)
+    public void copyArchiveToContainer(String containerId, File archive, String targetPath)
             throws DockerAccessException {
         try {
             String url = urlBuilder.copyArchive(containerId, targetPath);
@@ -295,6 +295,32 @@ public class DockerAccessWithHcClient implements DockerAccess {
             throw new DockerAccessException(e, "Unable to copy archive %s to container [%s] with path %s",
                                             archive.toPath(), containerId, targetPath);
         }
+    }
+
+    @Override
+    public void copyArchiveFromContainer(String containerId, String containerPath, File archive)
+            throws DockerAccessException {
+        try {
+            String url = urlBuilder.copyArchive(containerId, containerPath);
+            log.verbose(Logger.LogVerboseCategory.API, "GET %s", url);
+            delegate.get(url, getContainerFileHandler(archive), HTTP_OK);
+        } catch (IOException e) {
+            throw new DockerAccessException(e, "Unable to copy archived path %s from container [%s] into file %s",
+                                            containerPath, containerId, archive.toPath());
+        }
+    }
+
+    private ResponseHandler<Object> getContainerFileHandler(final File file) {
+        return new ResponseHandler<Object>() {
+            @Override
+            public Object handleResponse(HttpResponse response) throws IOException {
+                try (InputStream stream = response.getEntity().getContent();
+                    OutputStream out = new FileOutputStream(file)) {
+                    IOUtils.copy(stream, out, COPY_BUFFER_SIZE);
+                }
+                return null;
+            }
+        };
     }
 
     @Override

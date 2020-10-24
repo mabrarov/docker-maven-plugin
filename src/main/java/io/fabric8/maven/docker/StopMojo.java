@@ -244,11 +244,6 @@ public class StopMojo extends AbstractDockerMojo {
         return (allContainers || sledgeHammer);
     }
 
-    private boolean invokedTogetherWithDockerStart() {
-        Boolean startCalled = (Boolean) getPluginContext().get(CONTEXT_KEY_START_CALLED);
-        return startCalled != null && startCalled;
-    }
-
     private Set<Network> getNetworksToRemove(QueryService queryService, GavLabel gavLabel) throws IOException {
         if (!autoCreateCustomNetworks) {
             return Collections.emptySet();
