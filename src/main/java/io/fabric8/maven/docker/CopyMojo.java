@@ -3,6 +3,8 @@ package io.fabric8.maven.docker;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 
@@ -13,8 +15,11 @@ import org.apache.maven.plugins.annotations.Parameter;
 
 import io.fabric8.maven.docker.access.DockerAccess;
 import io.fabric8.maven.docker.config.CopyConfiguration;
+import io.fabric8.maven.docker.config.CopyConfiguration.Entry;
 import io.fabric8.maven.docker.config.ImageConfiguration;
+import io.fabric8.maven.docker.model.Container;
 import io.fabric8.maven.docker.service.ArchiveService;
+import io.fabric8.maven.docker.service.QueryService;
 import io.fabric8.maven.docker.service.RunService;
 import io.fabric8.maven.docker.service.RunService.ContainerDescriptor;
 import io.fabric8.maven.docker.service.ServiceHub;
@@ -23,14 +28,17 @@ import io.fabric8.maven.docker.util.GavLabel;
 import io.fabric8.maven.docker.util.Logger;
 
 /**
- * Mojo for copying file or directory from container.
+ * <p>Mojo for copying file or directory from container.<p/>
  *
- * If called together with <code>docker:start</code> (i.e. when configured for integration testing in a lifecycle
- * phase), then only the containers started by that goal are examined.
+ * <p>If called together with <code>docker:start</code> (i.e. when configured in the same lifecycle phase), then only
+ * the containers started by that goal are examined.<p/>
  *
- * If this goal is called standalone, then all images which are configured in pom.xml are iterated. For each image a
- * temporary container is created (but not started) before the copying and is removed after completion of the copying
- * (even if the copying failed).
+ * <p>If this goal is called standalone, then all images which are configured in pom.xml are iterated. If
+ * <code>createContainers</code> is <code>true</code>, then for each image a temporary container is created (but not
+ * started) before the copying and is removed after completion of the copying (even if the copying failed).<p/>
+ *
+ * <p>If <code>createContainers</code> is <code>false</code>, then containers matching image are searched and the
+ * copying is performed from the found containers only.</p>
  */
 @Mojo(name = "copy", defaultPhase = LifecyclePhase.POST_INTEGRATION_TEST)
 public class CopyMojo extends AbstractDockerMojo {
@@ -39,43 +47,120 @@ public class CopyMojo extends AbstractDockerMojo {
     private static final String TEMP_ARCHIVE_FILE_SUFFIX = ".tar";
 
     /**
-     * Naming pattern for how to name containers when created
+     * Whether to create containers or to copy from existing containers.
+     */
+    @Parameter(property = "docker.createContainers")
+    private boolean createContainers;
+
+    /**
+     * Naming pattern for how to name containers when created.
      */
     @Parameter(property = "docker.containerNamePattern")
     private String containerNamePattern = ContainerNamingUtil.DEFAULT_CONTAINER_NAME_PATTERN;
 
+    /**
+     * Whether to copy from all containers matching configured images or only from the newest ones.
+     */
+    @Parameter(property = "docker.copyAll", defaultValue = "false")
+    private boolean copyAll;
+
     @Override
     protected void executeInternal(ServiceHub hub) throws IOException, MojoExecutionException {
         DockerAccess dockerAccess = hub.getDockerAccess();
-        ArchiveService archiveService = hub.getArchiveService();
         RunService runService = hub.getRunService();
+        ArchiveService archiveService = hub.getArchiveService();
         GavLabel gavLabel = getGavLabel();
+        if (createContainers) {
+            log.debug("Copy mojo is invoked standalone, copying from new temporary containers");
+            copyFromTemporaryContainers(dockerAccess, runService, archiveService, gavLabel);
+        } else if (invokedTogetherWithDockerStart()) {
+            log.debug("Copy mojo is invoked together with start mojo, copying from containers created by start mojo");
+            copyFromStartedContainers(dockerAccess, runService, archiveService, gavLabel);
+        } else {
+            log.debug("Copy mojo is invoked standalone, copying from existing containers");
+            QueryService queryService = hub.getQueryService();
+            copyFromExistingContainers(dockerAccess, archiveService, queryService);
+        }
+    }
 
-        if (invokedTogetherWithDockerStart()) {
-            log.debug("Mojo is invoked together with start");
-            List<ContainerDescriptor> containerDescriptors = runService.getContainers(gavLabel);
-            for (ContainerDescriptor containerDescriptor : containerDescriptors) {
-                String containerId = containerDescriptor.getContainerId();
-                ImageConfiguration imageConfiguration = containerDescriptor.getImageConfig();
-                String imageName = imageConfiguration.getName();
-                log.debug("Found %s container of %s image", containerId, imageName);
-                CopyConfiguration copyConfiguration = imageConfiguration.getCopyConfiguration();
+    private void copyFromTemporaryContainers(final DockerAccess dockerAccess, final RunService runService,
+            final ArchiveService archiveService, final GavLabel gavLabel) throws IOException, MojoExecutionException {
+        List<ImageConfiguration> imageConfigurations = getResolvedImages();
+        for (ImageConfiguration imageConfiguration : imageConfigurations) {
+            CopyConfiguration copyConfiguration = imageConfiguration.getCopyConfiguration();
+            if (isEmpty(copyConfiguration)) {
+                continue;
+            }
+            String imageName = imageConfiguration.getName();
+            try (ContainerRemover containerRemover = new ContainerRemover(log, runService, removeVolumes)) {
+                String containerId = createContainer(runService, imageConfiguration, gavLabel);
+                containerRemover.setContainerId(containerId);
+                log.debug("Created %s container from %s image", containerId, imageName);
                 copy(dockerAccess, archiveService, containerId, imageName, copyConfiguration);
             }
-        } else {
-            log.debug("Mojo is invoked standalone, will create temporary containers");
-            List<ImageConfiguration> imageConfigurations = getResolvedImages();
-            for (ImageConfiguration imageConfiguration : imageConfigurations) {
-                String imageName = imageConfiguration.getName();
-                try (ContainerRemover containerRemover = new ContainerRemover(log, runService, removeVolumes)) {
-                    String containerId = createContainer(runService, imageConfiguration, gavLabel);
-                    containerRemover.setContainerId(containerId);
-                    log.debug("Created %s container from %s image", containerId, imageName);
-                    CopyConfiguration copyConfiguration = imageConfiguration.getCopyConfiguration();
-                    copy(dockerAccess, archiveService, containerId, imageName, copyConfiguration);
-                }
+        }
+    }
+
+    private void copyFromStartedContainers(final DockerAccess dockerAccess, final RunService runService,
+            final ArchiveService archiveService, final GavLabel gavLabel) throws IOException, MojoExecutionException {
+        List<ContainerDescriptor> containerDescriptors = runService.getContainers(gavLabel);
+        for (ContainerDescriptor containerDescriptor : containerDescriptors) {
+            ImageConfiguration imageConfiguration = containerDescriptor.getImageConfig();
+            CopyConfiguration copyConfiguration = imageConfiguration.getCopyConfiguration();
+            if (isEmpty(copyConfiguration)) {
+                continue;
+            }
+            String containerId = containerDescriptor.getContainerId();
+            String imageName = imageConfiguration.getName();
+            log.debug("Found %s container of %s image started by start mojo", containerId, imageName);
+            copy(dockerAccess, archiveService, containerId, imageName, copyConfiguration);
+        }
+    }
+
+    private void copyFromExistingContainers(final DockerAccess dockerAccess, final ArchiveService archiveService,
+            final QueryService queryService) throws IOException, MojoExecutionException {
+        List<ImageConfiguration> imageConfigurations = getResolvedImages();
+        for (ImageConfiguration imageConfiguration : imageConfigurations) {
+            CopyConfiguration copyConfiguration = imageConfiguration.getCopyConfiguration();
+            if (isEmpty(copyConfiguration)) {
+                continue;
+            }
+            String imageName = imageConfiguration.getName();
+            Collection<Container> containers = getContainersForImage(queryService, imageConfiguration);
+            if (containers.isEmpty()) {
+                log.warn("Found no containers of %s image", imageName);
+                continue;
+            }
+            if (containers.size() > 1) {
+                log.info("Found more than one container of %s image", imageName);
+            }
+            for (Container container : containers) {
+                String containerId = container.getId();
+                log.debug("Found %s container of %s image", containerId, imageName);
+                copy(dockerAccess, archiveService, containerId, imageName, copyConfiguration);
             }
         }
+    }
+
+    private boolean isEmpty(CopyConfiguration copyConfiguration) {
+        if (copyConfiguration == null) {
+            return false;
+        }
+        List<Entry> copyEntries = copyConfiguration.getEntries();
+        return copyEntries == null || copyEntries.isEmpty();
+    }
+
+    private List<Container> getContainersForImage(final QueryService queryService,
+            final ImageConfiguration imageConfiguration) throws IOException {
+        String imageName = imageConfiguration.getName();
+        if (copyAll) {
+            return queryService.getContainersForImage(imageName, true);
+        }
+        Container container = queryService.getLatestContainerForImage(imageName, true);
+        if (container == null) {
+            return Collections.emptyList();
+        }
+        return Collections.singletonList(container);
     }
 
     private String createContainer(RunService runService, ImageConfiguration imageConfiguration, GavLabel gavLabel)
@@ -88,21 +173,15 @@ public class CopyMojo extends AbstractDockerMojo {
 
     private void copy(DockerAccess dockerAccess, ArchiveService archiveService, String containerId, String imageName,
             CopyConfiguration copyConfiguration) throws IOException, MojoExecutionException {
-        if (containerId == null || copyConfiguration == null) {
-            return;
-        }
-        List<CopyConfiguration.Entry> entries = copyConfiguration.getEntries();
-        if (entries == null || entries.isEmpty()) {
-            return;
-        }
-        for (CopyConfiguration.Entry entry : entries) {
-            String containerPath = entry.getContainerPath();
+        List<CopyConfiguration.Entry> copyEntries = copyConfiguration.getEntries();
+        for (CopyConfiguration.Entry copyEntry : copyEntries) {
+            String containerPath = copyEntry.getContainerPath();
             if (containerPath == null) {
-                log.error("containerPath of containerToHostCopyEntry of %s container of %s image is not specified",
-                        containerId, imageName);
+                log.error("containerPath of copy goal entry for %s image is not specified", containerId, imageName);
                 throw new IllegalArgumentException("containerPath should be specified");
             }
-            File hostDirectory = getHostDirectory(entry.getHostDirectory());
+            File hostDirectory = getHostDirectory(copyEntry.getHostDirectory());
+            log.info("Copying %s from %s container into %s host directory", containerPath, containerId, hostDirectory);
             Files.createDirectories(hostDirectory.toPath());
             try (FileRemover fileRemover = new FileRemover(log)) {
                 File archiveFile = Files.createTempFile(TEMP_ARCHIVE_FILE_PREFIX, TEMP_ARCHIVE_FILE_SUFFIX).toFile();
