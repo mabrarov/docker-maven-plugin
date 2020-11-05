@@ -138,6 +138,7 @@ public enum ConfigKey {
     WATCH_MODE("watch.mode"),
     WATCH_POSTGOAL("watch.postGoal"),
     WATCH_POSTEXEC("watch.postExec"),
+    COPY_ENTRIES("copy.entries"),
     WORKDIR,
     WORKING_DIR;
 

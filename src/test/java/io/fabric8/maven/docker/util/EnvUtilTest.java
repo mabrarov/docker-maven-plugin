@@ -121,6 +121,37 @@ public class EnvUtilTest {
     }
 
     @Test
+    public void extractListOfPropertiesFromProperties() {
+        final Properties testProperties = getTestProperties(
+                "bla.0001.what",      "bye",
+                "bla.1.who",          "java",
+                "bla.2.what",         "hello",
+                "bla.2.who",          "world",
+                "bla.blub",           "empty",
+                "bla.blub.when.date", "late",
+                "bla." + EnvUtil.PROPERTY_COMBINE_POLICY_SUFFIX, "ignored-since-it-is-reserved",
+                "bla." + EnvUtil.PROPERTY_COMBINE_POLICY_SUFFIX + ".what", "ignored-since-it-is-reserved",
+                "bla.3." + EnvUtil.PROPERTY_COMBINE_POLICY_SUFFIX, "ignored-since-it-is-reserved",
+                "blub.1",             "unknown");
+        final Properties[] expectedListOfProperties = {
+                getTestProperties(
+                        "who",  "java",
+                        "what", "bye"),
+                getTestProperties(
+                        "who",  "world",
+                        "what", "hello"),
+                getTestProperties(
+                        "",          "empty",
+                        "when.date", "late")};
+
+        List<Properties> result = EnvUtil.extractFromPropertiesAsListOfProperties("bla", testProperties);
+
+        assertNotNull(result);
+        assertEquals(3, result.size());
+        assertArrayEquals(expectedListOfProperties, result.toArray());
+    }
+
+    @Test
     @TestCaseName("{method}: expression {0} => variable {1}")
     @Parameters
     public void mavenPropertyExtract(String expression, String varName) {
