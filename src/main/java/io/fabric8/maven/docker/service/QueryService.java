@@ -144,10 +144,20 @@ public class QueryService {
      * @throws DockerAccessException if the request fails
      */
     public Container getLatestContainerForImage(String image, boolean all) throws DockerAccessException {
+        return getLatestContainer(getContainersForImage(image, all));
+    }
+
+    /**
+     * Finds the latest container.
+     *
+     * @param containers containers to find the latest.
+     * @return the latest container or <code>null</code> if given <code>containers</code> is empty.
+     */
+    public Container getLatestContainer(List<Container> containers) {
         long newest = 0;
         Container result = null;
 
-        for (Container container : getContainersForImage(image, all)) {
+        for (Container container : containers) {
             long timestamp = container.getCreated();
 
             if (timestamp < newest) {

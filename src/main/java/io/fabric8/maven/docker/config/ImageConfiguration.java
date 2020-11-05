@@ -27,6 +27,12 @@ public class ImageConfiguration implements StartOrderResolver.Resolvable, Serial
     @Parameter
     private String stopNamePattern;
 
+    /**
+     * Pattern for the name of containers used by {@link io.fabric8.maven.docker.CopyMojo CopyMojo}.
+     */
+    @Parameter
+    private String copyNamePattern;
+
     @Parameter
     private String removeNamePattern;
 
@@ -94,6 +100,10 @@ public class ImageConfiguration implements StartOrderResolver.Resolvable, Serial
 
     public String getStopNamePattern() {
         return stopNamePattern;
+    }
+
+    public String getCopyNamePattern() {
+        return copyNamePattern;
     }
 
     public String getRemoveNamePattern() {
@@ -230,6 +240,11 @@ public class ImageConfiguration implements StartOrderResolver.Resolvable, Serial
 
         public Builder removeNamePattern(String removeNamePattern) {
             config.removeNamePattern = removeNamePattern;
+            return this;
+        }
+
+        public Builder copyNamePattern(String copyNamePattern) {
+            config.copyNamePattern = copyNamePattern;
             return this;
         }
 

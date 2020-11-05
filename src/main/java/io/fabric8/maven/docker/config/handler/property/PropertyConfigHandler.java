@@ -77,6 +77,7 @@ public class PropertyConfigHandler implements ExternalConfigHandler {
         String name = valueProvider.getString(NAME, fromConfig.getName());
         String alias = valueProvider.getString(ALIAS, fromConfig.getAlias());
         String removeNamePattern = valueProvider.getString(REMOVE_NAME_PATTERN, fromConfig.getRemoveNamePattern());
+        String copyNamePattern = valueProvider.getString(COPY_NAME_PATTERN, fromConfig.getStopNamePattern());
         String stopNamePattern = valueProvider.getString(STOP_NAME_PATTERN, fromConfig.getStopNamePattern());
 
         if (name == null) {
@@ -88,6 +89,7 @@ public class PropertyConfigHandler implements ExternalConfigHandler {
                         .name(name)
                         .alias(alias)
                         .removeNamePattern(removeNamePattern)
+                        .copyNamePattern(copyNamePattern)
                         .stopNamePattern(stopNamePattern)
                         .runConfig(run)
                         .buildConfig(build)

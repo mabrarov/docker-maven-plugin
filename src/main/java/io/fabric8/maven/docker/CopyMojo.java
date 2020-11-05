@@ -7,6 +7,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
+import java.util.regex.Matcher;
 
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
@@ -30,8 +31,8 @@ import io.fabric8.maven.docker.util.Logger;
 /**
  * <p>Mojo for copying file or directory from container.<p/>
  *
- * <p>If called together with <code>docker:start</code> (i.e. when configured in the same lifecycle phase), then only
- * the containers started by that goal are examined.<p/>
+ * <p>If called together with <code>docker:start</code>, then only the containers started by that goal are
+ * examined.<p/>
  *
  * <p>If this goal is called standalone, then all images which are configured in pom.xml are iterated. If
  * <code>createContainers</code> is <code>true</code>, then for each image a temporary container is created (but not
@@ -43,13 +44,14 @@ import io.fabric8.maven.docker.util.Logger;
 @Mojo(name = "copy", defaultPhase = LifecyclePhase.POST_INTEGRATION_TEST)
 public class CopyMojo extends AbstractDockerMojo {
 
+    private static final String COPY_NAME_PATTERN_CONFIG = "copyNamePattern";
     private static final String TEMP_ARCHIVE_FILE_PREFIX = "docker-copy-";
     private static final String TEMP_ARCHIVE_FILE_SUFFIX = ".tar";
 
     /**
      * Whether to create containers or to copy from existing containers.
      */
-    @Parameter(property = "docker.createContainers")
+    @Parameter(property = "docker.createContainers", defaultValue = "false")
     private boolean createContainers;
 
     /**
@@ -132,7 +134,7 @@ public class CopyMojo extends AbstractDockerMojo {
                 continue;
             }
             if (containers.size() > 1) {
-                log.info("Found more than one container of %s image", imageName);
+                log.warn("Found more than one container of %s image", imageName);
             }
             for (Container container : containers) {
                 String containerId = container.getId();
@@ -151,16 +153,26 @@ public class CopyMojo extends AbstractDockerMojo {
     }
 
     private List<Container> getContainersForImage(final QueryService queryService,
-            final ImageConfiguration imageConfiguration) throws IOException {
+            final ImageConfiguration imageConfiguration) throws IOException, MojoExecutionException {
         String imageName = imageConfiguration.getName();
+        String copyNamePattern = imageConfiguration.getCopyNamePattern();
+        Matcher containerNameMatcher =
+                copyNamePattern == null ? null : getContainerNameMatcher(copyNamePattern, COPY_NAME_PATTERN_CONFIG);
         if (copyAll) {
-            return queryService.getContainersForImage(imageName, true);
+            if (containerNameMatcher == null) {
+                return queryService.getContainersForImage(imageName, true);
+            }
+            return getContainersForPattern(queryService, true, null, containerNameMatcher, COPY_NAME_PATTERN_CONFIG);
         }
-        Container container = queryService.getLatestContainerForImage(imageName, true);
-        if (container == null) {
-            return Collections.emptyList();
+        Container latestContainer;
+        if (containerNameMatcher == null) {
+            latestContainer = queryService.getLatestContainerForImage(imageName, true);
+        } else {
+            List<Container> matchingContainers = getContainersForPattern(queryService, true, null, containerNameMatcher,
+                    COPY_NAME_PATTERN_CONFIG);
+            latestContainer = queryService.getLatestContainer(matchingContainers);
         }
-        return Collections.singletonList(container);
+        return latestContainer == null ? Collections.emptyList() : Collections.singletonList(latestContainer);
     }
 
     private String createContainer(RunService runService, ImageConfiguration imageConfiguration, GavLabel gavLabel)

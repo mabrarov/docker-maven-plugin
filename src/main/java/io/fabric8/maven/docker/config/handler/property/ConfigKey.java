@@ -112,6 +112,7 @@ public enum ConfigKey {
     SKIP_PUSH,
     SKIP_RUN("skip.run"),
     STOP_NAME_PATTERN,
+    COPY_NAME_PATTERN,
     TAGS(ValueCombinePolicy.Merge),
     TMPFS,
     ULIMITS,
