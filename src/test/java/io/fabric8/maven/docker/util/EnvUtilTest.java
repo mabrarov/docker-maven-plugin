@@ -129,10 +129,8 @@ public class EnvUtilTest {
                 "bla.2.who",          "world",
                 "bla.blub",           "empty",
                 "bla.blub.when.date", "late",
-                "bla." + EnvUtil.PROPERTY_COMBINE_POLICY_SUFFIX, "ignored-since-it-is-reserved",
-                "bla." + EnvUtil.PROPERTY_COMBINE_POLICY_SUFFIX + ".what", "ignored-since-it-is-reserved",
-                "bla.3." + EnvUtil.PROPERTY_COMBINE_POLICY_SUFFIX, "ignored-since-it-is-reserved",
-                "blub.1",             "unknown");
+                "blub.1",             "unknown",
+                "bla." + EnvUtil.PROPERTY_COMBINE_POLICY_SUFFIX, "ignored-since-it-is-reserved");
         final Properties[] expectedListOfProperties = {
                 getTestProperties(
                         "who",  "java",

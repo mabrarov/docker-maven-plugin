@@ -294,15 +294,12 @@ public class EnvUtil {
                 continue;
             }
             String propertyKey = key.substring(prefixDotLength);
-            final int indexEnd = propertyKey.indexOf('.');
-            final String name = indexEnd == -1 ? propertyKey : propertyKey.substring(0, indexEnd);
-            if (PROPERTY_COMBINE_POLICY_SUFFIX.equals(name)) {
-                continue;
-            }
-            propertyKey = indexEnd == -1 ? "" : propertyKey.substring(indexEnd + 1);
             if (PROPERTY_COMBINE_POLICY_SUFFIX.equals(propertyKey)) {
                 continue;
             }
+            final int indexEnd = propertyKey.indexOf('.');
+            final String name = indexEnd == -1 ? propertyKey : propertyKey.substring(0, indexEnd);
+            propertyKey = indexEnd == -1 ? "" : propertyKey.substring(indexEnd + 1);
             final String propertyValue = properties.getProperty(key);
             try {
                 final int index = Integer.parseInt(name);
