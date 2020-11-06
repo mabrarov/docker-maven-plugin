@@ -1,8 +1,8 @@
 FROM alpine
 
-RUN apk add --no-cache gcc libc-dev make cmake
+RUN apk add --no-cache gcc libc-dev make cmake tar
 
-ADD ["builder.tar", "/usr/src/hello"]
+ADD ["rootfs.tar", "/usr/src/hello"]
 
 RUN output_file="@builder.output.file@" && \
     source_dir="/usr/src/hello" && \
@@ -15,6 +15,7 @@ RUN output_file="@builder.output.file@" && \
       -B "${build_dir}" && \
     cmake --build "${build_dir}" && \
     mkdir -p "$(dirname "${output_file}")" && \
-    tar -C "${build_dir}" -cf "${output_file}" hello && \
+    tar --sort=name --owner=0:0 --group=0:0 --mtime='UTC 1970-01-01' \
+      -C "${build_dir}" -czf "${output_file}" hello && \
     rm -rf "${build_dir}" && \
     echo "Built binaries location: ${output_file}"
