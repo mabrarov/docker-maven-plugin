@@ -2,6 +2,29 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
+  <!--
+  Integration test which implements Builder pattern (https://docs.docker.com/develop/develop-images/multistage-build/).
+
+  Call it with: 'mvn verify'
+
+  The test does the following:
+
+  * Creates a Docker image with built 'hello world' application. The application is built as part of the image build.
+    This image is considered as 'builder image'. It contains tools required for building of the application as well as
+    archived built application binary.
+  * Creates a temporary container of the builder image.
+  * Copies archived 'hello world' application from the temporary container into the 'target' directory of
+    the 'app' submodule of this project.
+  * Removes the temporary container.
+  * Attaches the archive with built 'hello world' application as an artifact of the 'app' submodule.
+  * Creates a Docker image which contains just 'hello world' application. This image is considered as application image
+    and doesn't contain anything except application and its runtime (if any required). Application binary is taken from
+    the artifact of the 'app' submodule, i.e. from archive built within the builder image.
+  * Creates and starts a container of the application image as part of integration test.
+    This container starts 'hello world' application which prints message and stops with zero exit code.
+  * Stops and removes the container with 'hello world' application.
+  -->
+
   <parent>
     <groupId>io.fabric8.dmp.itests</groupId>
     <artifactId>dmp-it-parent</artifactId>
