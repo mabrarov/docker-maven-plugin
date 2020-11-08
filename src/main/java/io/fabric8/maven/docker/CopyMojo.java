@@ -31,15 +31,14 @@ import io.fabric8.maven.docker.util.Logger;
 /**
  * <p>Mojo for copying file or directory from container.<p/>
  *
- * <p>If called together with <code>docker:start</code>, then only the containers started by that goal are
- * examined.<p/>
+ * <p>When called with <code>true</code> value of <code>createContainers</code> option, then all images which are
+ * configured in the project are iterated. For each image a temporary container is created (but not started) before the
+ * copying and is removed after completion of the copying, even if the copying failed.<p/>
  *
- * <p>If this goal is called standalone, then all images which are configured in pom.xml are iterated. If
- * <code>createContainers</code> is <code>true</code>, then for each image a temporary container is created (but not
- * started) before the copying and is removed after completion of the copying (even if the copying failed).<p/>
- *
- * <p>If <code>createContainers</code> is <code>false</code>, then containers matching image are searched and the
- * copying is performed from the found containers only.</p>
+ * <p>When called with <code>false</code> value of <code>createContainers</code> option (default value) and together
+ * with <code>docker:start</code> goal, then only the containers started by that goal are examined. Otherwise containers
+ * matching images configured in the project are searched and the copying is performed from the found containers
+ * only.</p>
  */
 @Mojo(name = "copy", defaultPhase = LifecyclePhase.POST_INTEGRATION_TEST)
 public class CopyMojo extends AbstractDockerMojo {
