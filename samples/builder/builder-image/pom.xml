@@ -3,21 +3,13 @@
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <groupId>io.fabric8.dmp.itests</groupId>
-    <artifactId>dmp-it-builder-parent</artifactId>
+    <groupId>io.fabric8.dmp.samples</groupId>
+    <artifactId>dmp-sample-builder-parent</artifactId>
     <version>0.34-SNAPSHOT</version>
   </parent>
 
-  <artifactId>dmp-it-builder-app-image</artifactId>
+  <artifactId>dmp-sample-builder-builder-image</artifactId>
   <packaging>pom</packaging>
-
-  <dependencies>
-    <dependency>
-      <groupId>io.fabric8.dmp.itests</groupId>
-      <artifactId>dmp-it-builder-app</artifactId>
-      <type>tar.gz</type>
-    </dependency>
-  </dependencies>
 
   <build>
     <plugins>
@@ -25,6 +17,21 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-assembly-plugin</artifactId>
         <executions>
+          <execution>
+            <id>build-rootfs</id>
+            <phase>generate-resources</phase>
+            <goals>
+              <goal>single</goal>
+            </goals>
+            <configuration>
+              <finalName>rootfs</finalName>
+              <appendAssemblyId>false</appendAssemblyId>
+              <attach>false</attach>
+              <descriptors>
+                <descriptor>src/assembly/rootfs.xml</descriptor>
+              </descriptors>
+            </configuration>
+          </execution>
           <execution>
             <id>build-context</id>
             <phase>generate-resources</phase>
@@ -48,16 +55,11 @@
         <configuration>
           <images>
             <image>
-              <name>${app.image}</name>
+              <name>${builder.image}</name>
               <build>
                 <contextDir>${project.build.directory}/context</contextDir>
                 <filter>false</filter>
               </build>
-              <run>
-                <wait>
-                  <exit>0</exit>
-                </wait>
-              </run>
             </image>
           </images>
         </configuration>
@@ -67,14 +69,6 @@
             <phase>package</phase>
             <goals>
               <goal>build</goal>
-            </goals>
-          </execution>
-          <execution>
-            <id>run</id>
-            <phase>integration-test</phase>
-            <goals>
-              <goal>start</goal>
-              <goal>stop</goal>
             </goals>
           </execution>
         </executions>
