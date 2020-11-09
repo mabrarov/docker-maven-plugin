@@ -101,7 +101,7 @@ public class ContainerTracker {
      * @param gavLabel the label for which to get the descriptors or <code>null</code> for all descriptors
      * @return the descriptors for the given label or an empty collection
      */
-    public synchronized Collection<ContainerShutdownDescriptor> getShutdownDescriptors(GavLabel gavLabel) {
+    public synchronized List<ContainerShutdownDescriptor> getShutdownDescriptors(GavLabel gavLabel) {
         if (gavLabel == null) {
             // All entries are requested
             return new ArrayList<>(shutdownDescriptorPerContainerMap.values());
