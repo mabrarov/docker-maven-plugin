@@ -5,7 +5,7 @@
   <parent>
     <groupId>io.fabric8.dmp.samples</groupId>
     <artifactId>dmp-sample-builder-parent</artifactId>
-    <version>0.34-SNAPSHOT</version>
+    <version>0.34-dev</version>
   </parent>
 
   <artifactId>dmp-sample-builder-app</artifactId>
