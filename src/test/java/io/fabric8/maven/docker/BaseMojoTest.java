@@ -16,9 +16,11 @@ import org.codehaus.plexus.logging.console.ConsoleLogger;
 
 import io.fabric8.maven.docker.access.DockerAccess;
 import io.fabric8.maven.docker.config.BuildImageConfiguration;
+import io.fabric8.maven.docker.config.CopyConfiguration;
 import io.fabric8.maven.docker.config.ImageConfiguration;
 import io.fabric8.maven.docker.config.RunImageConfiguration;
 import io.fabric8.maven.docker.log.LogDispatcher;
+import io.fabric8.maven.docker.service.ArchiveService;
 import io.fabric8.maven.docker.service.QueryService;
 import io.fabric8.maven.docker.service.RunService;
 import io.fabric8.maven.docker.service.ServiceHub;
@@ -46,6 +48,9 @@ public class BaseMojoTest {
 
     @Mocked
     protected DockerAccess dockerAccess;
+
+    @Mocked
+    protected ArchiveService archiveService;
 
     @Mocked
     protected MavenProject mavenProject;
@@ -120,6 +125,15 @@ public class BaseMojoTest {
                 .build();
     }
 
+    protected ImageConfiguration singleImageWithCopy(List<CopyConfiguration.Entry> entries) {
+        return new ImageConfiguration.Builder()
+                .name("example:latest")
+                .copyConfig(new CopyConfiguration.Builder()
+                        .entries(entries)
+                        .build())
+                .build();
+    }
+
     protected List<ImageConfiguration> twoImagesWithBuild() {
         ImageConfiguration image1 = new ImageConfiguration.Builder()
                 .name("example1:latest")
@@ -168,5 +182,9 @@ public class BaseMojoTest {
     protected void givenResolvedImages(AbstractDockerMojo mojo, List<ImageConfiguration> resolvedImages) {
         Deencapsulation.setField(mojo, "images", resolvedImages);
         Deencapsulation.setField(mojo, "resolvedImages", resolvedImages);
+    }
+
+    protected void givenPluginContext(AbstractDockerMojo mojo, Object key, Object value) {
+        mojo.getPluginContext().put(key, value);
     }
 }
