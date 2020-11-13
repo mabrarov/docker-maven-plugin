@@ -159,11 +159,11 @@ public class StopMojo extends AbstractDockerMojo {
     private Collection<Container> getContainersForImage(QueryService queryService, ImageConfiguration image)
             throws MojoExecutionException, IOException {
 
-        String stopNamePattern = image.getStopNamePattern();
-        if (stopNamePattern != null) {
-            Matcher imageNameMatcher = getImageNameMatcher(stopNamePattern, STOP_NAME_PATTERN_CONFIG);
+        String imageStopNamePattern = image.getStopNamePattern();
+        if (imageStopNamePattern != null) {
+            Matcher imageNameMatcher = getImageNameMatcher(imageStopNamePattern, STOP_NAME_PATTERN_CONFIG);
 
-            Matcher containerNameMatcher = getContainerNameMatcher(stopNamePattern, STOP_NAME_PATTERN_CONFIG);
+            Matcher containerNameMatcher = getContainerNameMatcher(imageStopNamePattern, STOP_NAME_PATTERN_CONFIG);
 
             if(imageNameMatcher == null && containerNameMatcher == null) {
                 log.warn("There are no image name or container name patterns in stopNamePattern for image %s: no containers will be stopped", image.getName());

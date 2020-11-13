@@ -127,6 +127,8 @@ public class EnvUtilTest {
                 "bla.1.who",          "java",
                 "bla.2.what",         "hello",
                 "bla.2.who",          "world",
+                "bla.3",              "no dot at the end",
+                "bla.4.",             "ends with dot",
                 "bla.blub",           "empty",
                 "bla.blub.when.date", "late",
                 "blub.1",             "unknown",
@@ -139,13 +141,17 @@ public class EnvUtilTest {
                         "who",  "world",
                         "what", "hello"),
                 getTestProperties(
+                        "",     "no dot at the end"),
+                getTestProperties(
+                        "",     "ends with dot"),
+                getTestProperties(
                         "",          "empty",
                         "when.date", "late")};
 
         List<Properties> result = EnvUtil.extractFromPropertiesAsListOfProperties("bla", testProperties);
 
         assertNotNull(result);
-        assertEquals(3, result.size());
+        assertEquals(5, result.size());
         assertArrayEquals(expectedListOfProperties, result.toArray());
     }
 

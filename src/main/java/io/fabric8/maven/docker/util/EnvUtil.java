@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
-import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -289,38 +288,52 @@ public class EnvUtil {
 
         Enumeration<?> names = properties.propertyNames();
         while (names.hasMoreElements()) {
-            String key = (String) names.nextElement();
+            final String key = (String) names.nextElement();
             if (!propMatchesPrefix(prefixDot, key)) {
                 continue;
             }
-            String propertyKey = key.substring(prefixDotLength);
+            final String propertyKey = key.substring(prefixDotLength);
             if (PROPERTY_COMBINE_POLICY_SUFFIX.equals(propertyKey)) {
                 continue;
             }
-            final int indexEnd = propertyKey.indexOf('.');
-            final String name = indexEnd == -1 ? propertyKey : propertyKey.substring(0, indexEnd);
-            propertyKey = indexEnd == -1 ? "" : propertyKey.substring(indexEnd + 1);
-            final String propertyValue = properties.getProperty(key);
+            final int firstDotIndex = propertyKey.indexOf('.');
+            final String entryName = getKeyBefore(propertyKey, firstDotIndex);
+            final String entryPropertyKey = getKeyAfter(propertyKey, firstDotIndex);
+            final String entryPropertyValue = properties.getProperty(key);
             try {
-                final int index = Integer.parseInt(name);
-                Properties orderedProperties = ordered.get(index);
-                if (orderedProperties == null) {
-                    ordered.put(index, newProperties(propertyKey, propertyValue));
+                final int entryIndex = Integer.parseInt(entryName);
+                final Properties entry = ordered.get(entryIndex);
+                if (entry == null) {
+                    ordered.put(entryIndex, newProperties(entryPropertyKey, entryPropertyValue));
                 } else {
-                    orderedProperties.put(propertyKey, propertyValue);
+                    entry.put(entryPropertyKey, entryPropertyValue);
                 }
             } catch (NumberFormatException ignored) {
-                Properties restProperties = rest.get(name);
-                if (restProperties == null) {
-                    rest.put(name, newProperties(propertyKey, propertyValue));
+                final Properties entry = rest.get(entryName);
+                if (entry == null) {
+                    rest.put(entryName, newProperties(entryPropertyKey, entryPropertyValue));
                 } else {
-                    restProperties.put(propertyKey, propertyValue);
+                    entry.put(entryPropertyKey, entryPropertyValue);
                 }
             }
         }
         final List<Properties> all = new ArrayList<>(ordered.values());
         all.addAll(rest.values());
         return all.isEmpty() ? null : all;
+    }
+
+    private static String getKeyBefore(String name, int separatorIndex) {
+        if (separatorIndex == -1) {
+            return name;
+        }
+        return name.substring(0, separatorIndex);
+    }
+
+    private static String getKeyAfter(String name, int separatorIndex) {
+        if (separatorIndex == -1 || separatorIndex >= name.length()) {
+            return "";
+        }
+        return name.substring(separatorIndex + 1);
     }
 
     private static Properties newProperties(Object key, Object value) {
