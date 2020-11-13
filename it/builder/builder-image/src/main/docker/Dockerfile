@@ -15,7 +15,7 @@ RUN output_file="@builder.output.file@" && \
       -B "${build_dir}" && \
     cmake --build "${build_dir}" && \
     mkdir -p "$(dirname "${output_file}")" && \
-    tar --sort=name --owner=0:0 --group=0:0 --mtime='UTC 1970-01-01' \
+    tar --sort=name --owner=root:0 --group=root:0 --mtime='UTC 1970-01-01' \
       -C "${build_dir}" -czf "${output_file}" hello && \
     rm -rf "${build_dir}" && \
     echo "Built binaries location: ${output_file}"
