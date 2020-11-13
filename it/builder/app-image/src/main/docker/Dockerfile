@@ -2,4 +2,4 @@ FROM scratch
 
 CMD ["/hello"]
 
-ADD ["dmp-sample-builder-app.tar.gz", "/"]
+ADD ["dmp-it-builder-app.tar.gz", "/"]
