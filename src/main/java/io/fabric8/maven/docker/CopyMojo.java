@@ -145,7 +145,7 @@ public class CopyMojo extends AbstractDockerMojo {
 
     private boolean isEmpty(CopyConfiguration copyConfiguration) {
         if (copyConfiguration == null) {
-            return false;
+            return true;
         }
         List<Entry> copyEntries = copyConfiguration.getEntries();
         return copyEntries == null || copyEntries.isEmpty();
