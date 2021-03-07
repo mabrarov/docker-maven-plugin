@@ -6,6 +6,9 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import com.google.common.collect.ImmutableList;
 import io.fabric8.maven.docker.access.DockerAccess;
@@ -19,8 +22,10 @@ import io.fabric8.maven.docker.config.VolumeConfiguration;
 import io.fabric8.maven.docker.config.handler.ImageConfigResolver;
 import io.fabric8.maven.docker.log.LogDispatcher;
 import io.fabric8.maven.docker.log.LogOutputSpecFactory;
+import io.fabric8.maven.docker.model.Container;
 import io.fabric8.maven.docker.service.DockerAccessFactory;
 import io.fabric8.maven.docker.service.ImagePullManager;
+import io.fabric8.maven.docker.service.QueryService;
 import io.fabric8.maven.docker.service.RegistryService;
 import io.fabric8.maven.docker.service.ServiceHub;
 import io.fabric8.maven.docker.service.ServiceHubFactory;
@@ -30,7 +35,8 @@ import io.fabric8.maven.docker.util.EnvUtil;
 import io.fabric8.maven.docker.util.GavLabel;
 import io.fabric8.maven.docker.util.ImageNameFormatter;
 import io.fabric8.maven.docker.util.Logger;
-import io.fabric8.maven.docker.util.MojoParameters;
+import io.fabric8.maven.docker.util.NamePatternUtil;
+
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecution;
@@ -501,5 +507,60 @@ public abstract class AbstractDockerMojo extends AbstractMojo implements Context
         return new ImageConfiguration.Builder(image).buildConfig(buildConfig).build();
     }
 
+    protected boolean invokedTogetherWithDockerStart() {
+        Boolean startCalled = (Boolean) getPluginContext().get(CONTEXT_KEY_START_CALLED);
+        return startCalled != null && startCalled;
+    }
 
+    protected Matcher getImageNameMatcher(String pattern, String configName) throws MojoExecutionException {
+        try {
+            String nameRegex = NamePatternUtil.convertNamePatternList(pattern, NamePatternUtil.IMAGE_FIELD, true);
+            if (nameRegex == null) {
+                log.debug("No image name patterns in %s %s", configName, pattern);
+                return null;
+            }
+            log.debug("Converted %s %s into image name regular expression %s", configName, pattern, nameRegex);
+            return Pattern.compile(nameRegex).matcher("");
+        } catch (IllegalArgumentException e) {
+            throw new MojoExecutionException(e.getMessage(), e);
+        }
+    }
+
+    protected Matcher getContainerNameMatcher(String pattern, String configName) throws MojoExecutionException {
+        try {
+            String nameRegex = NamePatternUtil.convertNamePatternList(pattern, NamePatternUtil.NAME_FIELD, true);
+            if (nameRegex == null) {
+                log.debug("No container name patterns in %s %s", configName, pattern);
+                return null;
+            }
+            log.debug("Converted %s %s into container name regular expression %s", configName, pattern, nameRegex);
+            return Pattern.compile(nameRegex).matcher("");
+        } catch (IllegalArgumentException e) {
+            throw new MojoExecutionException(e.getMessage(), e);
+        }
+    }
+
+    protected List<Container> getContainersForPattern(QueryService queryService, boolean all, Matcher imageNameMatcher,
+            Matcher containerNameMatcher, String patternConfigName) throws IOException {
+        return queryService.listContainers(all).stream()
+                .filter(c -> containerMatchesPattern(c, imageNameMatcher, containerNameMatcher, patternConfigName))
+                .collect(Collectors.toList());
+    }
+
+    private boolean containerMatchesPattern(Container container, Matcher imageNameMatcher, Matcher containerNameMatcher,
+            String patternConfigName) {
+        if (imageNameMatcher != null && container.getImage() != null && imageNameMatcher.reset(container.getImage())
+                .find()) {
+            log.debug("Container image %s matched %s", container.getImage(), patternConfigName);
+            return true;
+        } else if (containerNameMatcher != null && container.getName() != null && containerNameMatcher
+                .reset(container.getName()).find()) {
+            log.debug("Container name %s matched %s", container.getName(), patternConfigName);
+            return true;
+        } else {
+            log.debug("Neither container image %s nor name %s matched %s", container.getImage(), container.getName(),
+                    patternConfigName);
+            return false;
+        }
+    }
 }
